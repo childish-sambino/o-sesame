@@ -27,7 +27,7 @@ provider "twilio" {
 
 resource "twilio_api_accounts_incoming_phone_numbers_v2010" "incoming_number" {
   phone_number = var.incoming_phone_number
-  voice_url = "https://webhooks.twilio.com/v1/Accounts/" + var.twilio_account_sid + "/Flows/" + twilio_studio_flows_v2.o_sesame_flow.sid
+  voice_url = "https://webhooks.twilio.com/v1/Accounts/${var.twilio_account_sid}/Flows/${twilio_studio_flows_v2.o_sesame_flow.sid}"
 }
 
 resource "twilio_studio_flows_v2" "o_sesame_flow" {
