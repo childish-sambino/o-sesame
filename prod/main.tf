@@ -19,6 +19,9 @@ variable "incoming_phone_number" {
 variable "outgoing_phone_number" {
   type = string
 }
+variable "secret_code" {
+  type = string
+}
 
 provider "twilio" {
   account_sid = var.twilio_account_sid
@@ -64,7 +67,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         type: "set-variables",
         transitions: [
           {
-            next: "gather_caller",
+            next: "alert_message",
             event: "next"
           }
         ],
@@ -85,12 +88,41 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             {
               value: var.outgoing_phone_number,
               key: "OutgoingPhoneNumber"
+            },
+            {
+              value: var.secret_code,
+              key: "SecretCode"
             }
           ],
           offset: {
-            x: 90,
-            y: 210
+            x: 140,
+            y: 160
           }
+        }
+      },
+      {
+        name: "alert_message",
+        type: "send-message",
+        transitions: [
+          {
+            next: "gather_caller",
+            event: "sent"
+          },
+          {
+            next: "gather_caller",
+            event: "failed"
+          }
+        ],
+        properties: {
+          offset: {
+            x: 50,
+            y: 380
+          },
+          service: "{{trigger.message.InstanceSid}}",
+          channel: "{{trigger.message.ChannelSid}}",
+          from: "{{flow.channel.address}}",
+          to: "{{flow.variables.OutgoingPhoneNumber}}",
+          body: "Someone is at the gate."
         }
       },
       {
@@ -98,7 +130,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         type: "gather-input-on-call",
         transitions: [
           {
-            next: "gather_caller",
+            next: "test_digits",
             event: "keypress"
           },
           {
@@ -112,10 +144,11 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         ],
         properties: {
           voice: "Polly.Matthew-Neural",
+          number_of_digits: 4,
           speech_timeout: "auto",
           offset: {
-            x: 420,
-            y: 210
+            x: -80,
+            y: 650
           },
           loop: 1,
           finish_on_key: "#",
@@ -142,8 +175,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         ],
         properties: {
           offset: {
-            x: 250,
-            y: 490
+            x: 240,
+            y: 930
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -176,8 +209,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           voice: "Polly.Matthew-Neural",
           offset: {
-            x: 70,
-            y: 780
+            x: 80,
+            y: 1200
           },
           loop: 1,
           say: "Please wait.",
@@ -203,7 +236,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
           queue_name: "Waiting At Gate",
           offset: {
             x: 220,
-            y: 1010
+            y: 1430
           }
         }
       },
@@ -218,12 +251,60 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           voice: "Polly.Matthew-Neural",
           offset: {
-            x: 500,
-            y: 780
+            x: 490,
+            y: 1200
           },
           loop: 1,
           say: "I'm sorry. Something went wrong. Please try again later.",
           language: "en-US"
+        }
+      },
+      {
+        name: "test_digits",
+        type: "split-based-on",
+        transitions: [
+          {
+            next: "gather_caller",
+            event: "noMatch"
+          },
+          {
+            next: "dial_9",
+            event: "match",
+            conditions: [
+              {
+                friendly_name: "If value equal_to SecretCode",
+                arguments: [
+                  "{{widgets.gather_caller.Digits}}"
+                ],
+                type: "equal_to",
+                value: "{{flow.variables.SecretCode}}"
+              }
+            ]
+          }
+        ],
+        properties: {
+          input: "{{widgets.gather_caller.Digits}}",
+          offset: {
+            x: 660,
+            y: 650
+          }
+        }
+      },
+      {
+        name: "dial_9",
+        type: "say-play",
+        transitions: [
+          {
+            event: "audioComplete"
+          }
+        ],
+        properties: {
+          offset: {
+            x: 760,
+            y: 930
+          },
+          loop: 1,
+          digits: "99"
         }
       }
     ],
@@ -311,7 +392,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             y: 380
           },
           from: "{{flow.channel.address}}",
-          body: "Someone is at the gate trying to enter: {{flow.data.CallerName}}",
+          body: "From the gate: {{flow.data.CallerName}}",
           timeout: "30"
         }
       },
