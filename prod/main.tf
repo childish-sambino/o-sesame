@@ -45,7 +45,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             event: "incomingMessage"
           },
           {
-            next: "gather_caller",
+            next: "set_vars",
             event: "incomingCall"
           },
           {
@@ -56,6 +56,40 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
           offset: {
             x: 70,
             y: 10
+          }
+        }
+      },
+      {
+        name: "set_vars",
+        type: "set-variables",
+        transitions: [
+          {
+            next: "gather_caller",
+            event: "next"
+          }
+        ],
+        properties: {
+          variables: [
+            {
+              value: var.twilio_account_sid,
+              key: "AccountSid"
+            },
+            {
+              value: var.twilio_auth_token,
+              key: "AuthToken"
+            },
+            {
+              value: twilio_studio_flows_v2.allow_entry_flow.sid,
+              key: "AllowEntryFlowSid"
+            },
+            {
+              value: var.outgoing_phone_number,
+              key: "OutgoingPhoneNumber"
+            }
+          ],
+          offset: {
+            x: 90,
+            y: 210
           }
         }
       },
@@ -80,8 +114,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
           voice: "Polly.Matthew-Neural",
           speech_timeout: "auto",
           offset: {
-            x: 150,
-            y: 220
+            x: 420,
+            y: 210
           },
           loop: 1,
           finish_on_key: "#",
@@ -108,18 +142,18 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         ],
         properties: {
           offset: {
-            x: 160,
+            x: 250,
             y: 490
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
           parameters: [
             {
-              value: var.outgoing_phone_number,
+              value: "{{flow.variables.OutgoingPhoneNumber}}",
               key: "To"
             },
             {
-              value: var.incoming_phone_number,
+              value: "{{trigger.call.To}}",
               key: "From"
             },
             {
@@ -127,7 +161,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
               key: "Parameters"
             }
           ],
-          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@studio.twilio.com/v2/Flows/${twilio_studio_flows_v2.allow_entry_flow.sid}/Executions"
+          url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@studio.twilio.com/v2/Flows/{{flow.variables.AllowEntryFlowSid}}/Executions"
         }
       },
       {
@@ -142,8 +176,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           voice: "Polly.Matthew-Neural",
           offset: {
-            x: 60,
-            y: 740
+            x: 70,
+            y: 780
           },
           loop: 1,
           say: "Please wait.",
@@ -168,8 +202,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           queue_name: "Waiting At Gate",
           offset: {
-            x: 150,
-            y: 960
+            x: 220,
+            y: 1010
           }
         }
       },
@@ -184,8 +218,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           voice: "Polly.Matthew-Neural",
           offset: {
-            x: 650,
-            y: 740
+            x: 500,
+            y: 780
           },
           loop: 1,
           say: "I'm sorry. Something went wrong. Please try again later.",
