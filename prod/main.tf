@@ -184,7 +184,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           voice: "Polly.Matthew-Neural",
           offset: {
-            x: 380,
+            x: 650,
             y: 740
           },
           loop: 1,
@@ -237,9 +237,11 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             event: "incomingMessage"
           },
           {
+            next: "hang_up",
             event: "timeout"
           },
           {
+            next: "something_wrong",
             event: "deliveryFailure"
           }
         ],
@@ -279,7 +281,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         properties: {
           input: "{{widgets.send_and_reply.inbound.Body}}",
           offset: {
-            x: 130,
+            x: 140,
             y: 400
           }
         }
@@ -324,7 +326,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         ],
         properties: {
           offset: {
-            x: -70,
+            x: -100,
             y: 690
           },
           method: "POST",
@@ -332,6 +334,33 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           parameters: [
             {
               value: "<Response><Say voice=\"Polly.Matthew-Neural\" language=\"en-US\">I'm sorry. I'm not available right now.</Say></Response>",
+              key: "Twiml"
+            }
+          ],
+          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@api.twilio.com/2010-04-01/Accounts/${var.twilio_account_sid}/Calls/{{flow.data.CallSid}}.json"
+        }
+      },
+      {
+        name: "something_wrong",
+        type: "make-http-request",
+        transitions: [
+          {
+            event: "success"
+          },
+          {
+            event: "failed"
+          }
+        ],
+        properties: {
+          offset: {
+            x: 690,
+            y: 130
+          },
+          method: "POST",
+          content_type: "application/x-www-form-urlencoded;charset=utf-8",
+          parameters: [
+            {
+              value: "<Response><Say voice=\"Polly.Matthew-Neural\" language=\"en-US\">I'm sorry. Something went wrong. Please try again later.</Say></Response>",
               key: "Twiml"
             }
           ],
