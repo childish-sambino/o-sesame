@@ -144,7 +144,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
               key: "From"
             },
             {
-              value: "{\"CallerName\":\"{{widgets.gather_caller.SpeechResult}} \", \"CallSid\": \"{{trigger.call.CallSid}}\"}",
+              value: "{\"CallerName\":\"{{widgets.gather_caller.SpeechResult}}\", \"CallSid\": \"{{trigger.call.CallSid}}\"}",
               key: "Parameters"
             }
           ],
@@ -208,7 +208,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             y: 130
           },
           from: "{{flow.channel.address}}",
-          body: "{{flow.data.CallerName}}",
+          body: "Someone is at the gate trying to enter: {{flow.data.CallerName}}",
           timeout: "30"
         }
       },
