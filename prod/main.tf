@@ -148,7 +148,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
               key: "Parameters"
             }
           ],
-          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@studio.twilio.com/v2/Flows/${twilio_studio_flows_v2.allow_entry_flow.sid}"
+          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@studio.twilio.com/v2/Flows/${twilio_studio_flows_v2.allow_entry_flow.sid}/Executions"
         }
       }
     ],
@@ -217,6 +217,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         type: "split-based-on",
         transitions: [
           {
+            next: "hang_up",
             event: "noMatch"
           },
           {
@@ -255,7 +256,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         ],
         properties: {
           offset: {
-            x: 140,
+            x: 280,
             y: 690
           },
           method: "POST",
@@ -263,6 +264,33 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           parameters: [
             {
               value: "<Response><Play digits=\"ww9ww\"></Play></Response>",
+              key: "Twiml"
+            }
+          ],
+          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@api.twilio.com/2010-04-01/Accounts/${var.twilio_account_sid}/Calls/{{flow.data.CallSid}}.json"
+        }
+      },
+      {
+        name: "hang_up",
+        type: "make-http-request",
+        transitions: [
+          {
+            event: "success"
+          },
+          {
+            event: "failed"
+          }
+        ],
+        properties: {
+          offset: {
+            x: -70,
+            y: 690
+          },
+          method: "POST",
+          content_type: "application/x-www-form-urlencoded;charset=utf-8",
+          parameters: [
+            {
+              value: "<Response><Say voice=\"Polly.Matthew-Neural\" language=\"en-US\">I'm sorry. I'm not available right now.</Say></Response>",
               key: "Twiml"
             }
           ],
