@@ -94,43 +94,22 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         }
       },
       {
-        name: "enqueue",
-        type: "enqueue-call",
-        transitions: [
-          {
-            event: "callComplete"
-          },
-          {
-            event: "failedToEnqueue"
-          },
-          {
-            event: "callFailure"
-          }
-        ],
-        properties: {
-          queue_name: "Waiting At Gate",
-          offset: {
-            x: 100,
-            y: 790
-          }
-        }
-      },
-      {
         name: "run_subflow",
         type: "make-http-request",
         transitions: [
           {
-            next: "enqueue",
+            next: "please_wait",
             event: "success"
           },
           {
+            next: "something_wrong",
             event: "failed"
           }
         ],
         properties: {
           offset: {
             x: 160,
-            y: 520
+            y: 490
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -149,6 +128,68 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             }
           ],
           url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@studio.twilio.com/v2/Flows/${twilio_studio_flows_v2.allow_entry_flow.sid}/Executions"
+        }
+      },
+      {
+        name: "please_wait",
+        type: "say-play",
+        transitions: [
+          {
+            next: "enqueue",
+            event: "audioComplete"
+          }
+        ],
+        properties: {
+          voice: "Polly.Matthew-Neural",
+          offset: {
+            x: 60,
+            y: 740
+          },
+          loop: 1,
+          say: "Please wait.",
+          language: "en-US"
+        }
+      },
+      {
+        name: "enqueue",
+        type: "enqueue-call",
+        transitions: [
+          {
+            event: "callComplete"
+          },
+          {
+            next: "something_wrong",
+            event: "failedToEnqueue"
+          },
+          {
+            event: "callFailure"
+          }
+        ],
+        properties: {
+          queue_name: "Waiting At Gate",
+          offset: {
+            x: 150,
+            y: 960
+          }
+        }
+      },
+      {
+        name: "something_wrong",
+        type: "say-play",
+        transitions: [
+          {
+            event: "audioComplete"
+          }
+        ],
+        properties: {
+          voice: "Polly.Matthew-Neural",
+          offset: {
+            x: 380,
+            y: 740
+          },
+          loop: 1,
+          say: "I'm sorry. Something went wrong. Please try again later.",
+          language: "en-US"
         }
       }
     ],
@@ -263,7 +304,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
           parameters: [
             {
-              value: "<Response><Play digits=\"ww9ww\"></Play></Response>",
+              value: "<Response><Play digits=\"w9www\"></Play></Response>",
               key: "Twiml"
             }
           ],
