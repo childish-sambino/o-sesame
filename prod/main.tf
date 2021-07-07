@@ -229,6 +229,32 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         }
       },
       {
+        name: "set_vars",
+        type: "set-variables",
+        transitions: [
+          {
+            next: "send_and_reply",
+            event: "next"
+          }
+        ],
+        properties: {
+          variables: [
+            {
+              value: var.twilio_account_sid,
+              key: "AccountSid"
+            },
+            {
+              value: var.twilio_auth_token,
+              key: "AuthToken"
+            }
+          ],
+          offset: {
+            x: 110,
+            y: 130
+          }
+        }
+      },
+      {
         name: "send_and_reply",
         type: "send-and-wait-for-reply",
         transitions: [
@@ -248,7 +274,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         properties: {
           offset: {
             x: 180,
-            y: 130
+            y: 380
           },
           from: "{{flow.channel.address}}",
           body: "Someone is at the gate trying to enter: {{flow.data.CallerName}}",
@@ -281,8 +307,8 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         properties: {
           input: "{{widgets.send_and_reply.inbound.Body}}",
           offset: {
-            x: 140,
-            y: 400
+            x: 130,
+            y: 600
           }
         }
       },
@@ -300,7 +326,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         properties: {
           offset: {
             x: 280,
-            y: 690
+            y: 860
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -310,7 +336,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
               key: "Twiml"
             }
           ],
-          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@api.twilio.com/2010-04-01/Accounts/${var.twilio_account_sid}/Calls/{{flow.data.CallSid}}.json"
+          url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@api.twilio.com/2010-04-01/Accounts/{{flow.variables.AccountSid}}/Calls/{{flow.data.CallSid}}.json"
         }
       },
       {
@@ -327,7 +353,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         properties: {
           offset: {
             x: -100,
-            y: 690
+            y: 860
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -337,7 +363,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
               key: "Twiml"
             }
           ],
-          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@api.twilio.com/2010-04-01/Accounts/${var.twilio_account_sid}/Calls/{{flow.data.CallSid}}.json"
+          url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@api.twilio.com/2010-04-01/Accounts/{{flow.variables.AccountSid}}/Calls/{{flow.data.CallSid}}.json"
         }
       },
       {
@@ -353,8 +379,8 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         ],
         properties: {
           offset: {
-            x: 690,
-            y: 130
+            x: 610,
+            y: 600
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -364,7 +390,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
               key: "Twiml"
             }
           ],
-          url: "https://${var.twilio_account_sid}:${var.twilio_auth_token}@api.twilio.com/2010-04-01/Accounts/${var.twilio_account_sid}/Calls/{{flow.data.CallSid}}.json"
+          url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@api.twilio.com/2010-04-01/Accounts/{{flow.variables.AccountSid}}/Calls/{{flow.data.CallSid}}.json"
         }
       }
     ],
