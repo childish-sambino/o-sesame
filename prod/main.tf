@@ -220,7 +220,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             event: "noMatch"
           },
           {
-            next: "http_1",
+            next: "dial_9",
             event: "match",
             conditions: [
               {
