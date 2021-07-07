@@ -161,6 +161,55 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         }
       },
       {
+        name: "test_digits",
+        type: "split-based-on",
+        transitions: [
+          {
+            next: "gather_caller",
+            event: "noMatch"
+          },
+          {
+            next: "dial_9",
+            event: "match",
+            conditions: [
+              {
+                friendly_name: "If value equal_to SecretCode",
+                arguments: [
+                  "{{widgets.gather_caller.Digits}}"
+                ],
+                type: "equal_to",
+                value: "{{flow.variables.SecretCode}}"
+              }
+            ]
+          }
+        ],
+        properties: {
+          input: "{{widgets.gather_caller.Digits}}",
+          offset: {
+            x: 660,
+            y: 650
+          }
+        }
+      },
+      {
+        name: "dial_9",
+        type: "say-play",
+        transitions: [
+          {
+            next: "enqueue",
+            event: "audioComplete"
+          }
+        ],
+        properties: {
+          offset: {
+            x: 880,
+            y: 1200
+          },
+          loop: 1,
+          digits: "9"
+        }
+      },
+      {
         name: "run_subflow",
         type: "make-http-request",
         transitions: [
@@ -235,8 +284,8 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         properties: {
           queue_name: "Waiting At Gate",
           offset: {
-            x: 220,
-            y: 1430
+            x: 260,
+            y: 1500
           }
         }
       },
@@ -257,54 +306,6 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
           loop: 1,
           say: "I'm sorry. Something went wrong. Please try again later.",
           language: "en-US"
-        }
-      },
-      {
-        name: "test_digits",
-        type: "split-based-on",
-        transitions: [
-          {
-            next: "gather_caller",
-            event: "noMatch"
-          },
-          {
-            next: "dial_9",
-            event: "match",
-            conditions: [
-              {
-                friendly_name: "If value equal_to SecretCode",
-                arguments: [
-                  "{{widgets.gather_caller.Digits}}"
-                ],
-                type: "equal_to",
-                value: "{{flow.variables.SecretCode}}"
-              }
-            ]
-          }
-        ],
-        properties: {
-          input: "{{widgets.gather_caller.Digits}}",
-          offset: {
-            x: 660,
-            y: 650
-          }
-        }
-      },
-      {
-        name: "dial_9",
-        type: "say-play",
-        transitions: [
-          {
-            event: "audioComplete"
-          }
-        ],
-        properties: {
-          offset: {
-            x: 760,
-            y: 930
-          },
-          loop: 1,
-          digits: "99"
         }
       }
     ],
@@ -447,7 +448,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
           parameters: [
             {
-              value: "<Response><Play digits=\"w9www\"></Play></Response>",
+              value: "<Response><Play digits=\"w9www\"></Play><Enqueue>Waiting At Gate</Enqueue></Response>",
               key: "Twiml"
             }
           ],
