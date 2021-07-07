@@ -251,7 +251,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             event: "incomingCall"
           },
           {
-            next: "send_and_reply",
+            next: "set_vars",
             event: "incomingRequest"
           }
         ],
