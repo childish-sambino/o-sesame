@@ -237,7 +237,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             event: "success"
           },
           {
-            next: "run_subflow",
+            next: "something_wrong",
             event: "failed"
           }
         ],
@@ -313,6 +313,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         type: "say-play",
         transitions: [
           {
+            next: "gather_caller",
             event: "audioComplete"
           }
         ],
@@ -323,7 +324,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             y: 1200
           },
           loop: 1,
-          say: "I'm sorry. Something went wrong. Please try again later.",
+          say: "I'm sorry. Something went wrong. Let's try that again.",
           language: "en-US"
         }
       }
