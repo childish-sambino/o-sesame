@@ -237,7 +237,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             event: "success"
           },
           {
-            next: "something_wrong",
+            next: "run_subflow",
             event: "failed"
           }
         ],
@@ -584,7 +584,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           },
           from: "{{flow.channel.address}}",
           body: "Someone is at the gate.",
-          timeout: "7"
+          timeout: "10"
         }
       },
       {
