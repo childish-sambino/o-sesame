@@ -157,7 +157,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             event: "timeout"
           },
           {
-            next: "run_subflow",
+            next: "please_wait",
             event: "speech"
           }
         ],
@@ -177,6 +177,26 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
           gather_language: "en-US",
           profanity_filter: "true",
           timeout: 5
+        }
+      },
+      {
+        name: "please_wait",
+        type: "say-play",
+        transitions: [
+          {
+            next: "run_subflow",
+            event: "audioComplete"
+          }
+        ],
+        properties: {
+          voice: "Polly.Matthew-Neural",
+          offset: {
+            x: 330,
+            y: 940
+          },
+          loop: 1,
+          say: "Please wait.",
+          language: "en-US"
         }
       },
       {
@@ -233,18 +253,18 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         type: "make-http-request",
         transitions: [
           {
-            next: "please_wait",
+            next: "enqueue",
             event: "success"
           },
           {
-            next: "something_wrong",
+            next: "please_wait",
             event: "failed"
           }
         ],
         properties: {
           offset: {
-            x: 240,
-            y: 930
+            x: 80,
+            y: 1200
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -263,26 +283,6 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             }
           ],
           url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@studio.twilio.com/v2/Flows/{{flow.variables.AllowEntryFlowSid}}/Executions"
-        }
-      },
-      {
-        name: "please_wait",
-        type: "say-play",
-        transitions: [
-          {
-            next: "enqueue",
-            event: "audioComplete"
-          }
-        ],
-        properties: {
-          voice: "Polly.Matthew-Neural",
-          offset: {
-            x: 80,
-            y: 1200
-          },
-          loop: 1,
-          say: "Please wait.",
-          language: "en-US"
         }
       },
       {
@@ -313,7 +313,6 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         type: "say-play",
         transitions: [
           {
-            next: "gather_caller",
             event: "audioComplete"
           }
         ],
@@ -324,7 +323,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             y: 1200
           },
           loop: 1,
-          say: "I'm sorry. Something went wrong. Let's try that again.",
+          say: "I'm sorry. Something went wrong. Please try again later.",
           language: "en-US"
         }
       }
@@ -585,7 +584,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           },
           from: "{{flow.channel.address}}",
           body: "Someone is at the gate.",
-          timeout: "7"
+          timeout: "10"
         }
       },
       {
