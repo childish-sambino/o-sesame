@@ -585,7 +585,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
           },
           from: "{{flow.channel.address}}",
           body: "Someone is at the gate.",
-          timeout: "10"
+          timeout: "7"
         }
       },
       {
