@@ -22,6 +22,10 @@ variable "outgoing_phone_number" {
 variable "secret_code" {
   type = string
 }
+variable "open_commands" {
+  type = string
+  default = "OPEN, Open, open, YES, Yes, yes, Y, y"
+}
 
 provider "twilio" {
   account_sid = var.twilio_account_sid
@@ -48,11 +52,14 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             event: "incomingMessage"
           },
           {
-            next: "set_vars",
-            event: "incomingCall"
+            event: "incomingRequest"
           },
           {
-            event: "incomingRequest"
+            event: "incomingParent"
+          },
+          {
+            next: "set_vars",
+            event: "incomingCall"
           }
         ],
         properties: {
@@ -67,7 +74,7 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         type: "set-variables",
         transitions: [
           {
-            next: "alert_message",
+            next: "run_alert_flow",
             event: "next"
           }
         ],
@@ -101,12 +108,12 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
         }
       },
       {
-        name: "alert_message",
-        type: "send-message",
+        name: "run_alert_flow",
+        type: "make-http-request",
         transitions: [
           {
             next: "gather_caller",
-            event: "sent"
+            event: "success"
           },
           {
             next: "gather_caller",
@@ -118,11 +125,23 @@ resource "twilio_studio_flows_v2" "o_sesame_flow" {
             x: 50,
             y: 380
           },
-          service: "{{trigger.message.InstanceSid}}",
-          channel: "{{trigger.message.ChannelSid}}",
-          from: "{{flow.channel.address}}",
-          to: "{{flow.variables.OutgoingPhoneNumber}}",
-          body: "Someone is at the gate."
+          method: "POST",
+          content_type: "application/x-www-form-urlencoded;charset=utf-8",
+          parameters: [
+            {
+              value: "{{flow.variables.OutgoingPhoneNumber}}",
+              key: "To"
+            },
+            {
+              value: "{{trigger.call.To}}",
+              key: "From"
+            },
+            {
+              value: "{\"CallSid\": \"{{trigger.call.CallSid}}\"}",
+              key: "Parameters"
+            }
+          ],
+          url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@studio.twilio.com/v2/Flows/{{flow.variables.AllowEntryFlowSid}}/Executions"
         }
       },
       {
@@ -333,6 +352,9 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             event: "incomingCall"
           },
           {
+            event: "incomingParent"
+          },
+          {
             next: "set_vars",
             event: "incomingRequest"
           }
@@ -349,7 +371,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         type: "set-variables",
         transitions: [
           {
-            next: "send_and_reply",
+            next: "split_on_entry",
             event: "next"
           }
         ],
@@ -365,17 +387,48 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             }
           ],
           offset: {
-            x: 110,
+            x: 290,
             y: 130
           }
         }
       },
       {
-        name: "send_and_reply",
+        name: "split_on_entry",
+        type: "split-based-on",
+        transitions: [
+          {
+            next: "entry_message",
+            event: "noMatch"
+          },
+          {
+            next: "alert_message",
+            event: "match",
+            conditions: [
+              {
+                friendly_name: "{{flow.data.CallerName}}",
+                arguments: [
+                  "{{flow.data.CallerName}}"
+                ],
+                type: "is_blank",
+                value: "Is Blank"
+              }
+            ]
+          }
+        ],
+        properties: {
+          input: "{{flow.data.CallerName}}",
+          offset: {
+            x: 180,
+            y: 370
+          }
+        }
+      },
+      {
+        name: "entry_message",
         type: "send-and-wait-for-reply",
         transitions: [
           {
-            next: "test",
+            next: "entry_test",
             event: "incomingMessage"
           },
           {
@@ -390,7 +443,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         properties: {
           offset: {
             x: 180,
-            y: 380
+            y: 590
           },
           from: "{{flow.channel.address}}",
           body: "From the gate: {{flow.data.CallerName}}",
@@ -398,7 +451,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         }
       },
       {
-        name: "test",
+        name: "entry_test",
         type: "split-based-on",
         transitions: [
           {
@@ -410,21 +463,21 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             event: "match",
             conditions: [
               {
-                friendly_name: "If value matches_any_of YES, Yes, yes, Y, y",
+                friendly_name: "If value in open commands",
                 arguments: [
-                  "{{widgets.send_and_reply.inbound.Body}}"
+                  "{{widgets.entry_message.inbound.Body}}"
                 ],
                 type: "matches_any_of",
-                value: "YES, Yes, yes, Y, y"
+                value: var.open_commands
               }
             ]
           }
         ],
         properties: {
-          input: "{{widgets.send_and_reply.inbound.Body}}",
+          input: "{{widgets.entry_message.inbound.Body}}",
           offset: {
-            x: 130,
-            y: 600
+            x: 50,
+            y: 840
           }
         }
       },
@@ -441,8 +494,8 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         ],
         properties: {
           offset: {
-            x: 280,
-            y: 860
+            x: 690,
+            y: 1140
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -468,8 +521,8 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         ],
         properties: {
           offset: {
-            x: -100,
-            y: 860
+            x: -80,
+            y: 1100
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -495,8 +548,8 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         ],
         properties: {
           offset: {
-            x: 610,
-            y: 600
+            x: 550,
+            y: 840
           },
           method: "POST",
           content_type: "application/x-www-form-urlencoded;charset=utf-8",
@@ -507,6 +560,61 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
             }
           ],
           url: "https://{{flow.variables.AccountSid}}:{{flow.variables.AuthToken}}@api.twilio.com/2010-04-01/Accounts/{{flow.variables.AccountSid}}/Calls/{{flow.data.CallSid}}.json"
+        }
+      },
+      {
+        name: "alert_message",
+        type: "send-and-wait-for-reply",
+        transitions: [
+          {
+            next: "alert_test",
+            event: "incomingMessage"
+          },
+          {
+            event: "timeout"
+          },
+          {
+            event: "deliveryFailure"
+          }
+        ],
+        properties: {
+          offset: {
+            x: 620,
+            y: 590
+          },
+          from: "{{flow.channel.address}}",
+          body: "Someone is at the gate.",
+          timeout: "10"
+        }
+      },
+      {
+        name: "alert_test",
+        type: "split-based-on",
+        transitions: [
+          {
+            event: "noMatch"
+          },
+          {
+            next: "dial_9",
+            event: "match",
+            conditions: [
+              {
+                friendly_name: "If value in open commands",
+                arguments: [
+                  "{{widgets.alert_message.inbound.Body}}"
+                ],
+                type: "matches_any_of",
+                value: var.open_commands
+              }
+            ]
+          }
+        ],
+        properties: {
+          input: "{{widgets.alert_message.inbound.Body}}",
+          offset: {
+            x: 960,
+            y: 840
+          }
         }
       }
     ],
