@@ -592,6 +592,7 @@ resource "twilio_studio_flows_v2" "allow_entry_flow" {
         type: "split-based-on",
         transitions: [
           {
+            next: "hang_up",
             event: "noMatch"
           },
           {
