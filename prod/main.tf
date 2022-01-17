@@ -2,7 +2,7 @@ terraform {
   required_providers {
     twilio = {
       source = "twilio/twilio"
-      version = ">=0.4.0"
+      version = "0.11.0"
     }
   }
 }
@@ -28,8 +28,8 @@ variable "open_commands" {
 }
 
 provider "twilio" {
-  account_sid = var.twilio_account_sid
-  auth_token = var.twilio_auth_token
+  username = var.twilio_account_sid
+  password = var.twilio_auth_token
 }
 
 resource "twilio_api_accounts_incoming_phone_numbers_v2010" "incoming_number" {
